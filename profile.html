@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - QuickBite</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ff5a5f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    .login-container {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      width: 350px;
+      max-width: 90vw;
+      text-align: center;
+    }
+
+    .login-container h1 {
+      color: #ff5a5f;
+      margin-bottom: 8px;
+    }
+
+    .login-container p {
+      margin-bottom: 30px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      padding: 12px 15px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #ff5a5f;
+      box-shadow: 0 0 5px #ff5a5f66;
+    }
+
+    button {
+      background-color: #ff5a5f;
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e14d4f;
+    }
+
+    .forgot-password {
+      font-size: 0.9rem;
+      margin-top: 12px;
+      color: #888;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 400px) {
+      .login-container {
+        width: 90vw;
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h1>Foodify</h1>
+    <p>Login to order your favorite meals</p>
+    <form action="#" method="POST" onsubmit="alert('Login submitted!'); return false;">
+      <input type="email" name="email" placeholder="Email address" required autocomplete="username" />
+      <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
+      <button type="submit">Login</button>
+    </form>
+    <div class="forgot-password" onclick="alert('Password recovery not implemented yet.')">Forgot password?</div>
+  </div>
+
+</body>
+</html>
