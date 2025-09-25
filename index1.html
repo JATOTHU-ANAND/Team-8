@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Restaurant List — User Home</title>
+  <style>
+   
+    :root{--accent:#ff6b6b;--muted:#6b7280;--card:#fff;--bg:#f7fafc}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:#111}
+    header{background-color:var(--accent);padding:18px 24px;display:flex;gap:16px;align-items:center;justify-content:space-between;box-shadow:0 1px 6px rgba(16,24,40,.06)}
+    h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    input[type=search]{padding:10px 12px;border-radius:10px;border:1px solid #e6e9ef;min-width:220px}
+    select{padding:10px;border-radius:10px;border:1px solid #e6e9ef}
+    main{max-width:1100px;margin:22px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(17,24,39,.06);display:flex;flex-direction:column}
+    .card img{width:100%;height:160px;object-fit:cover;display:block}
+    .card-content{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .meta .rating{font-weight:700;color:#fff;background:linear-gradient(90deg,var(--accent),#ff8a5b);padding:6px 8px;border-radius:999px;font-size:13px}
+    .tags{font-size:13px;color:var(--muted)}
+    .actions{display:flex;gap:8px;margin-top:auto}
+    .btn{padding:8px 10px;border-radius:8px;border:1px solid transparent;background:#111;color:#fff;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--accent);border-color:rgba(255,107,107,.12)}
+    .fav{background:transparent;border:none;cursor:pointer;font-size:18px}
+    .empty{padding:60px;text-align:center;color:var(--muted)}
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.5);display:none;align-items:center;justify-content:center}
+    .modal{background:#fff;border-radius:12px;max-width:760px;width:94%;box-shadow:0 20px 60px rgba(2,6,23,.4);overflow:hidden}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f3f5}
+    .modal-body{display:grid;grid-template-columns:1fr 280px;gap:12px;padding:16px}
+    .modal-body img{width:100%;height:220px;object-fit:cover;border-radius:8px}
+    @media (max-width:720px){.modal-body{grid-template-columns:1fr}}
+    footer{max-width:1100px;margin:18px auto;padding:8px 16px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Find a Restaurant</h1>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Search by name, cuisine or location" />
+      <select id="filterCuisine">
+        <option value="all">All cuisines</option>
+        <option value="Italian">Italian</option>
+        <option value="Indian">Indian</option>
+        <option value="Chinese">Chinese</option>
+        <option value="Cafe">Cafe</option>
+        <option value="Vegetarian">Vegetarian</option>
+      </select>
+      <select id="sortBy">
+        <option value="recommended">Recommended</option>
+        <option value="rating_desc">Rating: High → Low</option>
+        <option value="rating_asc">Rating: Low → High</option>
+        <option value="distance">Distance</option>
+      </select>
+      <button id="clearBtn" class="btn secondary">Clear</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="listSection" class="grid" aria-live="polite"></section>
+    <div id="empty" class="empty" style="display:none">No restaurants match your search.</div>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal" role="document">
+      <div class="modal-header">
+        <strong id="modalTitle">Restaurant</strong>
+        <button id="closeModal" class="fav" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <img id="modalImage" src="" alt="Restaurant image"/>
+          <p id="modalDesc" style="margin-top:8px;color:var(--muted)"></p>
+        </div>
+        <aside style="padding:6px 8px;border-left:1px solid #f3f4f6">
+          <p><strong>Rating:</strong> <span id="modalRating"></span></p>
+          <p><strong>Cuisine:</strong> <span id="modalCuisine"></span></p>
+          <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+          <p><strong>Distance:</strong> <span id="modalDistance"></span> km</p>
+          <div style="margin-top:12px"><button id="modalFav" class="btn">Add to favorites</button></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <footer>Tip: click a card to view details. Favorites are saved locally.</footer>
+
+  <script>
+    // Sample restaurant data (images hosted online)
+    const restaurants = [
+      {
+        id:1,name:"Bella Italia",cuisine:"Italian",rating:4.6,location:"MG Road, Bangalore",distance:2.1,
+        image:"bella-italia",
+        desc:"Classic thin-crust pizzas and pastas made with fresh ingredients. Cozy ambiance perfect for date nights."
+      },
+      {
+        id:2,name:"Spice Route",cuisine:"Indian",rating:4.4,location:"HSR Layout, Bangalore",distance:4.7,
+        image:"spice-route.jpg",
+        desc:"Regional Indian specialties with a modern twist. Great vegetarian options."
+      },
+      {
+        id:3,name:"Dragon Wok",cuisine:"Chinese",rating:4.2,location:"Indiranagar, Bangalore",distance:3.6,
+        image:"Dragon Wok",
+        desc:"Family-friendly Chinese restaurant with a wide selection of stir-fries and dim sum."
+      },
+      {
+        id:4,name:"Green Leaf Cafe",cuisine:"Cafe",rating:4.7,location:"Koramangala, Bangalore",distance:1.9,
+        image:"https://images.unsplash.com/photo-1498654896293-37aacf113fd9?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=4c5d6e7f8a9b0c1d2e",
+        desc:"Bright cafe serving breakfast, artisanal coffee, and plant-based choices. Great for remote work."
+      },
+      {
+        id:5,name:"Earthly Delights",cuisine:"Vegetarian",rating:4.5,location:"Whitefield, Bangalore",distance:8.2,
+        image:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=5d6e7f8a9b0c1d2e3f",
+        desc:"Pure vegetarian restaurant with creative global dishes and a relaxed atmosphere."
+      }
+    ];
+
+    const listEl = document.getElementById('listSection');
+    const searchEl = document.getElementById('search');
+    const filterEl = document.getElementById('filterCuisine');
+    const sortEl = document.getElementById('sortBy');
+    const clearBtn = document.getElementById('clearBtn');
+    const emptyEl = document.getElementById('empty');
+
+    // Favorites using localStorage
+    const FAV_KEY = 'fav_restaurants_v1';
+    function loadFavs(){return JSON.parse(localStorage.getItem(FAV_KEY) || '[]')}
+    function saveFavs(arr){localStorage.setItem(FAV_KEY, JSON.stringify(arr))}
+    function isFav(id){return loadFavs().includes(id)}
+    function toggleFav(id){const favs=loadFavs();if(favs.includes(id)){const idx=favs.indexOf(id);favs.splice(idx,1)}else{favs.push(id)}saveFavs(favs);renderList(currentView)}
+
+    // Modal elements
+    const backdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalImage = document.getElementById('modalImage');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalRating = document.getElementById('modalRating');
+    const modalCuisine = document.getElementById('modalCuisine');
+    const modalLocation = document.getElementById('modalLocation');
+    const modalDistance = document.getElementById('modalDistance');
+    const modalFav = document.getElementById('modalFav');
+    let activeId = null;
+
+    document.getElementById('closeModal').addEventListener('click',closeModal);
+    backdrop.addEventListener('click',(e)=>{if(e.target===backdrop) closeModal()});
+
+    function openModal(r){activeId=r.id;modalTitle.textContent=r.name;modalImage.src=r.image;modalDesc.textContent=r.desc;modalRating.textContent=r.rating;modalCuisine.textContent=r.cuisine;modalLocation.textContent=r.location;modalDistance.textContent=r.distance;modalFav.textContent=isFav(r.id)?'Remove from favorites':'Add to favorites';backdrop.style.display='flex'}
+    function closeModal(){backdrop.style.display='none';activeId=null}
+
+    // Build card HTML
+    function createCard(r){
+      const card = document.createElement('article');card.className='card';
+      const img = document.createElement('img');img.loading='lazy';img.alt=`${r.name} image`;
+      // Use image URL; add fallback on error
+      img.src = r.image;
+      img.addEventListener('error',()=>{img.src='https://via.placeholder.com/800x600?text=Image+not+available'});
+      card.appendChild(img);
+
+      const content = document.createElement('div');content.className='card-content';
+      const titleRow = document.createElement('div');titleRow.style.display='flex';titleRow.style.justifyContent='space-between';
+      const h3 = document.createElement('h3');h3.style.margin='0';h3.textContent=r.name;
+      const rating = document.createElement('div');rating.className='rating';rating.textContent=r.rating.toFixed(1);
+      titleRow.appendChild(h3);titleRow.appendChild(rating);
+
+      const tags = document.createElement('div');tags.className='tags';tags.textContent=`${r.cuisine} • ${r.location}`;
+      const desc = document.createElement('p');desc.style.margin='6px 0 0 0';desc.style.color='var(--muted)';desc.style.fontSize='14px';desc.textContent=r.desc;
+
+      const actions = document.createElement('div');actions.className='actions';
+      const detailsBtn = document.createElement('button');detailsBtn.className='btn';detailsBtn.textContent='View';detailsBtn.addEventListener('click',(e)=>{e.stopPropagation();openModal(r)});
+      const favBtn = document.createElement('button');favBtn.className='fav';favBtn.innerHTML = isFav(r.id)?'❤️':'🤍';favBtn.title='Toggle favorite';favBtn.addEventListener('click',(e)=>{e.stopPropagation();toggleFav(r.id)});
+      actions.appendChild(detailsBtn);actions.appendChild(favBtn);
+
+      content.appendChild(titleRow);content.appendChild(tags);content.appendChild(desc);content.appendChild(actions);
+      card.appendChild(content);
+
+      // click card opens modal
+      card.addEventListener('click',()=>openModal(r));
+      return card;
+    }
+
+    // Rendering and filtering
+    let currentView = restaurants.slice();
+    function renderList(arr){
+      listEl.innerHTML='';
+      if(!arr.length){emptyEl.style.display='block';return}
+      emptyEl.style.display='none';
+      arr.forEach(r=>{listEl.appendChild(createCard(r))});
+    }
+
+    function applyFilters(){
+      const q = searchEl.value.trim().toLowerCase();
+      const cuisine = filterEl.value;
+      let filtered = restaurants.filter(r=>{
+        const matchesQ = !q || (r.name+ ' ' + r.cuisine + ' ' + r.location + ' ' + r.desc).toLowerCase().includes(q);
+        const matchesCuisine = cuisine==='all' || r.cuisine===cuisine;
+        return matchesQ && matchesCuisine;
+      });
+
+      // Sorting
+      const sort = sortEl.value;
+      if(sort==='rating_desc') filtered.sort((a,b)=>b.rating - a.rating);
+      else if(sort==='rating_asc') filtered.sort((a,b)=>a.rating - b.rating);
+      else if(sort==='distance') filtered.sort((a,b)=>a.distance - b.distance);
+      else if(sort==='recommended') filtered.sort((a,b)=>b.rating - a.rating + (a.distance - b.distance)*0.05);
+
+      currentView = filtered;renderList(filtered);
+    }
+
+    // events
+    searchEl.addEventListener('input',debounce(applyFilters,250));
+    filterEl.addEventListener('change',applyFilters);
+    sortEl.addEventListener('change',applyFilters);
+    clearBtn.addEventListener('click',()=>{searchEl.value='';filterEl.value='all';sortEl.value='recommended';applyFilters()});
+
+    // Modal favorite button
+    modalFav.addEventListener('click',()=>{if(activeId){toggleFav(activeId);modalFav.textContent=isFav(activeId)?'Remove from favorites':'Add to favorites'}});
+
+    // Helper: debounce
+    function debounce(fn,wait){let t;return function(...args){clearTimeout(t);t=setTimeout(()=>fn.apply(this,args),wait)}}
+
+    // Initialise
+    applyFilters();
+  </script>
+</body>
+</html>
