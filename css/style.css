@@ -134,6 +134,7 @@ body {
 
 .card:hover {
   transform: translateY(-8px);
+  transition: (1.05);
 }
 
 /* Footer */
